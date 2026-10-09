@@ -219,6 +219,19 @@ async function deleteSong(id) {
         alert(data.message || "Mizik la efase ak siksè!");
         if (data.success) loadSongs();
     } catch (err) {
+    ),    console.error("Erè:", err);
+    
+}async function deleteSong(id) {
+    if (!confirm("Èske w sèten ou vle efase mizik sa a?")) return;
+    
+    try {
+        const res = await fetch(`/api/songs/${id}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+        alert(data.message || "Mizik la efase ak siksè!");
+        if (data.success) loadSongs();
+    } catch (err) {
         console.error("Erè:", err);
     }
 }
