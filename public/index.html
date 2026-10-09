@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lanmou Mizik - Stream & Download</title>
+  <style>
+    body { background-color: #0b0b0b; color: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; padding-bottom: 110px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: linear-gradient(180deg, #1f0505 0%, #0b0b0b 100%); border-bottom: 2px solid #e50914; border-radius: 8px; margin-bottom: 25px; }
+    .logo-text { color: #e50914; font-size: 26px; font-weight: bold; margin: 0; text-transform: uppercase; }
+    .btn-upload { background-color: #e50914; color: white; padding: 10px 20px; text-decoration: none; border-radius: 20px; font-weight: bold; }
+    .search-container { margin-bottom: 15px; }
+    .search-input { width: 100%; max-width: 500px; padding: 12px 20px; background-color: #161616; border: 1px solid #333; border-radius: 25px; color: white; font-size: 15px; outline: none; }
+    .genre-buttons { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 25px; }
+    .genre-btn { background-color: #161616; color: #ccc; border: 1px solid #333; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+    .genre-btn.active, .genre-btn:hover { background-color: #e50914; color: white; border-color: #e50914; }
+    
+    .section-title { color: #e50914; font-size: 20px; border-bottom: 1px solid #222; padding-bottom: 5px; margin-top: 30px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 25px; margin-bottom: 30px; }
+    .card { background-color: #141414; border-radius: 12px; padding: 15px; text-align: center; border: 1px solid #222; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    .card img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; cursor: pointer; }
+    .card h3 { margin: 12px 0 4px; font-size: 18px; }
+    .card h3 a { color: #fff; text-decoration: none; }
+    .card h3 a:hover { color: #e50914; }
+    .card p { color: #aaa; margin: 0 0 8px; font-size: 14px; }
+    .card p a { color: #e50914; text-decoration: none; font-weight: bold; }
+    .genre-tag { background-color: #2a080a; color: #e50914; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; }
+    .stats-row { display: flex; justify-content: space-around; color: #e50914; font-weight: bold; font-size: 13px; margin: 10px 0; }
+    .actions { display: flex; gap: 10px; margin-top: 15px; }
+    .btn-play-now { background-color: #e50914; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 8px; }
+    .btn-download { background-color: #25d366; color: white; text-decoration: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; flex: 1; text-align: center; }
+    .btn-delete { background-color: #222; color: #ff4d4d; border: 1px solid #444; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; flex: 1; }
+
+    /* Player Flottan anba ekran an */
+    .bottom-player { position: fixed; bottom: 0; left: 0; right: 0; background: #161616; border-top: 2px solid #e50914; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.8); z-index: 1000; }
+    .player-info { display: flex; align-items: center; gap: 12px; width: 250px; }
+    .player-info img { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; }
+    .player-info div { display: flex; flex-direction: column; }
+    .player-title { color: #fff; font-weight: bold; font-size: 14px; }
+    .player-artist { color: #aaa; font-size: 12px; }
+    .bottom-player audio { flex: 1; max-width: 600px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 class="logo-text">Lanmou Mizik</h1>
+    <a href="/upload" class="btn-upload">+ Upload Mizik</a>
+  </header>
+
+  <div class="search-container">
+    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Chèche yon mizik oswa yon atis..." onkeyup="filterSongs()">
+  </div>
+
+  <div class="genre-buttons">
+    <button class="genre-btn active" onclick="filterGenre('ALL', this)">Tout Mizik</button>
+    <button class="genre-btn" onclick="filterGenre('Rap', this)">Rap</button>
+    <button class="genre-btn" onclick="filterGenre('Drill', this)">Drill</button>
+    <button class="genre-btn" onclick="filterGenre('R&B', this)">R&B</button>
+    <button class="genre-btn" onclick="filterGenre('Afro', this)">Afro</button>
+  </div>
+
+  <div id="topSection" style="display:none;">
+    <h2 class="section-title">🔥 Mizik Ki Pi Popilè Yo (Top Tracks)</h2>
+    <div class="grid" id="topGrid"></div>
+  </div>
+
+  <h2 class="section-title">🎵 Tout Mizik Ki Soti Yo</h2>
+  <div class="grid" id="songsGrid">
+    <p>N ap chaje mizik yo...</p>
+  </div>
+
+  <!-- Player anba ekran an -->
+  <div class="bottom-player" id="bottomPlayer" style="display:none;">
+    <div class="player-info">
+      <img id="playerCover" src="" alt="">
+      <div>
+        <span class="player-title" id="playerTitle">San Tit</span>
+        <span class="player-artist" id="playerArtist">Atis Enkoni</span>
+      </div>
+    </div>
+    <audio controls id="mainAudio" autoplay></audio>
+  </div>
+
+  <script>
+    let allSongs = [];
+    let selectedGenre = 'ALL';
+
+    async function loadSongs() {
+      try {
+        const res = await fetch('/api/songs');
+        allSongs = await res.json();
+        renderTopSongs();
+        filterSongs();
+      } catch (err) { console.error(err); }
+    }
+
+    function renderTopSongs() {
+      const topGrid = document.getElementById('topGrid');
+      const topSection = document.getElementById('topSection');
+      const sorted = [...allSongs].sort((a, b) => ((b.plays || 0) + (b.downloads || 0)) - ((a.plays || 0) + (a.downloads || 0)));
+      const top3 = sorted.slice(0, 3).filter(s => (s.plays > 0 || s.downloads > 0));
+
+      if (top3.length === 0) {
+        topSection.style.display = 'none';
+        return;
+      }
+      topSection.style.display = 'block';
+      topGrid.innerHTML = top3.map(song => buildCardHTML(song)).join('');
+    }
+
+    function renderSongs(songs) {
+      const grid = document.getElementById('songsGrid');
+      if (!songs || songs.length === 0) {
+        grid.innerHTML = '<p style="color: #888;">Pa gen mizik ki jwenn.</p>';
+        return;
+      }
+      grid.innerHTML = songs.map(song => buildCardHTML(song)).join('');
+    }
+
+    function buildCardHTML(song) {
+      return `
+        <div class="card">
+          <a href="/song/${song.id}"><img src="${song.coverUrl || 'https://via.placeholder.com/200'}" alt="${song.title}"></a>
+          <h3><a href="/song/${song.id}">${song.title}</a></h3>
+          <p><a href="/artist/${encodeURIComponent(song.artist)}">${song.artist}</a> • <span class="genre-tag">${song.genre}</span></p>
+          <div class="stats-row">
+            <span>▶ ${song.plays || 0} Play(s)</span>
+            <span>⬇️ ${song.downloads || 0} Download(s)</span>
+          </div>
+          <button class="btn-play-now" onclick="playMusic(${song.id}, '${song.title}', '${song.artist}', '${song.coverUrl}', '${song.audioUrl}')">▶ Jwe Kounye a</button>
+          <div class="actions">
+            <a href="${song.audioUrl}" download="${song.title}.mp3" class="btn-download" onclick="registerDownload(${song.id})">⬇️ Download</a>
+            <button class="btn-delete" onclick="deleteSong(${song.id})">🗑️ Efase</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function playMusic(id, title, artist, cover, audioUrl) {
+      const player = document.getElementById('bottomPlayer');
+      const audio = document.getElementById('mainAudio');
+      document.getElementById('playerTitle').innerText = title;
+      document.getElementById('playerArtist').innerText = artist;
+      document.getElementById('playerCover').src = cover || 'https://via.placeholder.com/50';
+      audio.src = audioUrl;
+      player.style.display = 'flex';
+      audio.play();
+      registerPlay(id);
+    }
+
+    function filterGenre(genre, btnElement) {
+      selectedGenre = genre;
+      document.querySelectorAll('.genre-btn').forEach(btn => btn.classList.remove('active'));
+      btnElement.classList.add('active');
+      filterSongs();
+    }
+
+    function filterSongs() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = allSongs.filter(song => {
+        const matchesQuery = song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query);
+        const matchesGenre = (selectedGenre === 'ALL') || (song.genre.toLowerCase() === selectedGenre.toLowerCase());
+        return matchesQuery && matchesGenre;
+      });
+      renderSongs(filtered);
+    }
+
+    async function registerPlay(id) { await fetch(`/api/songs/${id}/play`, { method: 'POST' }); }
+    async function registerDownload(id) { await fetch(`/api/songs/${id}/download`, { method: 'POST' }); setTimeout(loadSongs, 1000); }
+
+    async function deleteSong(id) {
+      const pwd = prompt("Antre kòd sekirite la pou w efase mizik sa a:");
+      if (!pwd) return;
+
+      const res = await fetch(`/api/songs/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd })
+      });
+
+      const data = await res.json();
+      alert(data.message);
+      if (data.success) loadSongs();
+    }
+
+    loadSongs();
+  </script>
+</body>
+</html>
